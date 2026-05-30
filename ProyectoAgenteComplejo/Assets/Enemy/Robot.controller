@@ -78,7 +78,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Attack 360
+  m_Name: StrongAttack
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -265,7 +265,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: WalkingPerseguir
+  m_Name: Chase
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -314,7 +314,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: WalkingPatrullar
+  m_Name: Patrol
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -342,7 +342,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Esquibar
+  m_Name: Evade
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -545,7 +545,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Punching
+  m_Name: NormalAttack
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -620,7 +620,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Jump Attack
+  m_Name: RageAttack
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
