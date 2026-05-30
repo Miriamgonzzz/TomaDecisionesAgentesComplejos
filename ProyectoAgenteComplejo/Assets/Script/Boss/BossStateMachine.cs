@@ -181,6 +181,8 @@ public class BossStateMachine : MonoBehaviour
 
                 if (stateTimer >= 0.8f)
                 {
+                    blackboard.isEvading = false;
+                    blackboard.RegisterEvade();
                     ChangeState(BossState.NormalAttack);
                 }
 

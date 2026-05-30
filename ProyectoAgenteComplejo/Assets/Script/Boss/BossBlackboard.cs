@@ -45,6 +45,7 @@ public class BossBlackboard : MonoBehaviour
 
     [HideInInspector] public bool rageMode;
     [HideInInspector] public bool isDead;
+    [HideInInspector] public bool isEvading;
     [HideInInspector] public int normalAttackCounter;
     [HideInInspector] public int receivedHitsCounter;
     [HideInInspector] public float lastAttackTime;
@@ -127,7 +128,7 @@ public class BossBlackboard : MonoBehaviour
 
     public void ReceiveDamage(float damage)
     {
-        if (isDead)
+        if (isDead || isEvading)
         {
             return;
         }

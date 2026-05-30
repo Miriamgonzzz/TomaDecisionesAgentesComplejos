@@ -80,14 +80,15 @@ public class BossActions : MonoBehaviour
 
     public void Evade()
     {
+
+        blackboard.isEvading = true;
+
         PlayAnimation(BossAnimationNames.Evade);
 
         Vector3 evadeDirection = -transform.right;
         transform.position += evadeDirection * 2f;
 
-        blackboard.RegisterEvade();
-
-        Debug.Log("Robot: esquiva");
+        Debug.Log("Robot: esquiva y no recibe daño");
     }
 
     public void ActivateRageMode()

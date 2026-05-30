@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,6 +31,7 @@ public class PlayerController : MonoBehaviour
     private float xRotation = 0f;
 
     private float lastAttackTime;
+    private bool isAttacking;
 
     private void Awake()
     {
@@ -115,7 +117,7 @@ public class PlayerController : MonoBehaviour
     void HandleAnimations()
     {
         bool isGrounded = controller.isGrounded;
-        bool isMoving = moveInput.magnitude > 0.1f && isGrounded;
+        bool isMoving = moveInput.magnitude > 0.1f;
         bool isFalling = velocity.y < -0.1f && !isGrounded;
 
         if (animator == null) return;
@@ -141,7 +143,11 @@ public class PlayerController : MonoBehaviour
 
         if (animator != null)
         {
-            animator.SetTrigger("Attack");
+            isAttacking = true;
+            animator.SetBool("IsAttacking", true);
+
+            StartCoroutine(ResetAttack());
+
         }
 
         if (boss == null)
@@ -151,7 +157,6 @@ public class PlayerController : MonoBehaviour
         }
 
         Vector3 origin = attackPoint != null ? attackPoint.position : transform.position;
-
         float distanceToBoss = Vector3.Distance(origin, boss.transform.position);
 
         if (distanceToBoss <= attackRange)
@@ -162,6 +167,17 @@ public class PlayerController : MonoBehaviour
         else
         {
             Debug.Log("Jugador ataca, pero está fuera de rango.");
+        }
+    }
+    private IEnumerator ResetAttack()
+    {
+        yield return new WaitForSeconds(0.8f);
+
+        isAttacking = false;
+
+        if (animator != null)
+        {
+            animator.SetBool("IsAttacking", false);
         }
     }
 }
