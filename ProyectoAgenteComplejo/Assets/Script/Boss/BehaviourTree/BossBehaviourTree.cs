@@ -6,10 +6,11 @@ using UnityEngine;
 public class BossBehaviourTree : MonoBehaviour
 {
     private BossBlackboard blackboard;
-    private BossActions actions;
+    private BossActions actions;       
 
-    private BTTask root;
+    private BTTask root;               //Nodo raíz que comanda el árbol de comportamientos
 
+    [Header("Temporizadores de Bloqueo Interno")]
     private float idleTimer;
     private float patrolTimer;
     private float evadeTimer;
@@ -17,6 +18,7 @@ public class BossBehaviourTree : MonoBehaviour
     private float strongAttackTimer;
     private float rageAttackTimer;
 
+    [Header("Flags de Control de Acciones Persistentes")]
     private bool strongAttackStarted;
     private bool rageAttackStarted;
     private bool evadeStarted;
@@ -28,44 +30,55 @@ public class BossBehaviourTree : MonoBehaviour
         blackboard = GetComponent<BossBlackboard>();
         actions = GetComponent<BossActions>();
 
+        //Construye la estructura jerárquica del árbol al comenzar
         BuildTree();
     }
 
     private void Update()
     {
+        //Mecanismo de segurida. Solo ejecuta el árbol si la IA está configurada en este modo mediante el Enum
         if (blackboard.brainMode != BossBrainMode.BehaviourTree)
             return;
 
+        //Evalúa toda la estructura desde la raíz en cada frame
         root.Run();
     }
 
+    //Construye y define la topología jerárquica del Árbol de Comportamiento
+    //Utiliza un Selector principal combinado con Secuencias (condición + acción)
     private void BuildTree()
     {
+        //El nodo raíz es un Selector. Evalua a sus hijos de arriba a abajo y ejecuta el primero que tenga éxito
         root = new BTSelector(new List<BTTask>
         {
+            //PRIORIDAD 1: Condición de Muerte global
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.isDead),
                 new BTAction(Death)
             }),
 
+            //PRIORIDAD 2: Decorador de Furia (Si se puede pasar al modo furia)
             new BTRageDecorator(
                 blackboard,
                 new BTAction(ActivateRage)
             ),
 
+            //PRIORIDAD 3: Bloqueo por activación de furia
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => rageStarted),
                 new BTAction(RageWait)
             }),
 
+            //PRIORIDAD 4: Estado de Idle/Patrulla si no ve al jugador
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => !blackboard.CanSeePlayer()),
                 new BTAction(IdleAndPatrol)
             }),
 
+            //PRIORIDAD 5: Persecución, si ve al Jugador pero está fuera de alcance para atacarle
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.CanSeePlayer()),
@@ -73,29 +86,33 @@ public class BossBehaviourTree : MonoBehaviour
                 new BTAction(Chase)
             }),
 
+            //PRIORIDAD 6: Maniobra de Evasión
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.IsPlayerInAttackRange()),
-                new BTCondition(() => blackboard.ShouldEvade() || evadeStarted),
+                new BTCondition(() => blackboard.ShouldEvade() || evadeStarted), //Se mantiene activo si ya empezó, para evitar cortar la animación
                 new BTAction(Evade)
             }),
 
+            //PRIORIDAD 7: Ataque Fuerte en modo furia
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.IsPlayerInAttackRange()),
                 new BTCondition(() => blackboard.rageMode),
-                new BTCondition(() => blackboard.ShouldUseSpecialAttack() || rageAttackStarted),
+                new BTCondition(() => blackboard.ShouldUseSpecialAttack() || rageAttackStarted), //se mantiene y no corta la animación hasta finalizarla
                 new BTAction(RageAttack)
             }),
 
+            // PRIORIDAD 8: Ataque Fuerte en modo normal
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.IsPlayerInAttackRange()),
                 new BTCondition(() => !blackboard.rageMode),
-                new BTCondition(() => blackboard.ShouldUseSpecialAttack() || strongAttackStarted),
+                new BTCondition(() => blackboard.ShouldUseSpecialAttack() || strongAttackStarted), //se mantiene y no corta la animación hasta acabarla
                 new BTAction(StrongAttack)
             }),
 
+            //PRIORIDAD 9: Ataque básico por defecto
             new BTSequence(new List<BTTask>
             {
                 new BTCondition(() => blackboard.IsPlayerInAttackRange()),
@@ -104,38 +121,49 @@ public class BossBehaviourTree : MonoBehaviour
         });
     }
 
+
+    //método para matar al Jefe
     private void Death()
     {
-        if (deathStarted) return;
+        if (deathStarted)
+        {
+            return;
+        }
 
         deathStarted = true;
         actions.Die();
-        Debug.Log("BT -> Muerte");
     }
 
+    //método para activar la furia
     private void ActivateRage()
     {
-        if (rageStarted) return;
+        if (rageStarted) 
+        {
+            return;
+        }
+        
 
         rageStarted = true;
         rageTimer = 0f;
 
         actions.ActivateRageMode();
-        Debug.Log("BT -> Activar furia");
     }
 
+    //Simula un nodo temporal de espera. Sostiene la ejecución del Jefe durante 1s mientras cambia a la fase furia
     private void RageWait()
     {
         rageTimer += Time.deltaTime;
 
         if (rageTimer >= 1f)
         {
-            rageStarted = false;
+            rageStarted = false; //Libera el bloqueo para permitir otros comportamientos en el siguiente frame
         }
     }
 
+    //Método para controlar el ciclo alterno entre Idle y patrullar sin salir del nodo de acción
     private void IdleAndPatrol()
     {
+        
         if (patrolTimer > 0f)
         {
             patrolTimer += Time.deltaTime;
@@ -146,7 +174,6 @@ public class BossBehaviourTree : MonoBehaviour
                 patrolTimer = 0f;
                 idleTimer = 0f;
             }
-
             return;
         }
 
@@ -155,8 +182,8 @@ public class BossBehaviourTree : MonoBehaviour
 
         if (idleTimer >= blackboard.idleDuration)
         {
-            blackboard.ChooseNewPatrolTarget();
-            patrolTimer = 0.01f;
+            blackboard.ChooseNewPatrolTarget(); 
+            patrolTimer = 0.01f; 
         }
     }
 
@@ -164,7 +191,6 @@ public class BossBehaviourTree : MonoBehaviour
     {
         ResetAttackTimers();
         actions.ChasePlayer();
-        Debug.Log("BT -> Chase");
     }
 
     private void NormalAttack()
@@ -174,10 +200,10 @@ public class BossBehaviourTree : MonoBehaviour
         if (blackboard.CanAttack())
         {
             actions.NormalAttack();
-            Debug.Log("BT -> Ataque normal");
         }
     }
 
+    
     private void StrongAttack()
     {
         if (!strongAttackStarted)
@@ -185,14 +211,13 @@ public class BossBehaviourTree : MonoBehaviour
             strongAttackStarted = true;
             strongAttackTimer = 0f;
             actions.StrongAttack();
-            Debug.Log("BT -> Ataque fuerte");
         }
 
         strongAttackTimer += Time.deltaTime;
 
         if (strongAttackTimer >= blackboard.strongAttackDuration)
         {
-            strongAttackStarted = false;
+            strongAttackStarted = false; 
             strongAttackTimer = 0f;
         }
     }
@@ -204,7 +229,6 @@ public class BossBehaviourTree : MonoBehaviour
             rageAttackStarted = true;
             rageAttackTimer = 0f;
             actions.RageAttack();
-            Debug.Log("BT -> Ataque fortísimo");
         }
 
         rageAttackTimer += Time.deltaTime;
@@ -216,6 +240,7 @@ public class BossBehaviourTree : MonoBehaviour
         }
     }
 
+   
     private void Evade()
     {
         if (!evadeStarted)
@@ -223,7 +248,6 @@ public class BossBehaviourTree : MonoBehaviour
             evadeStarted = true;
             evadeTimer = 0f;
             actions.Evade();
-            Debug.Log("BT -> Esquivar");
         }
 
         evadeTimer += Time.deltaTime;
@@ -237,6 +261,8 @@ public class BossBehaviourTree : MonoBehaviour
         }
     }
 
+    //Resetea todos los temporizadores y variables bandera pasados 
+    //Utilizado al cambiar bruscamente de comportamiento (por ejemplo cuando pasa de ataque a perseguir)
     private void ResetAttackTimers()
     {
         strongAttackStarted = false;
@@ -250,12 +276,19 @@ public class BossBehaviourTree : MonoBehaviour
         blackboard.isEvading = false;
     }
 
+    //Resetea los cronómetros de los ataques especiales si estos no han comenzado
     private void ResetSpecialAttackFlags()
     {
         if (!strongAttackStarted)
+        {
             strongAttackTimer = 0f;
+        }
+            
 
         if (!rageAttackStarted)
+        {
             rageAttackTimer = 0f;
+        }
+            
     }
 }
